@@ -19,8 +19,10 @@ def init_db() -> None:
     schema starts evolving (HANDOFF.md §5)."""
     # Import models so they register on SQLModel.metadata before create_all.
     from app import models  # noqa: F401
+    from app.migrations import run_migrations
 
     SQLModel.metadata.create_all(engine)
+    run_migrations(engine)
 
 
 def get_session() -> Iterator[Session]:

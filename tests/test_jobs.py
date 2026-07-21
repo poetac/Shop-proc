@@ -95,6 +95,35 @@ def test_accepting_quote_creates_job_at_accepted(client):
     assert _first_job_status(client) == JobStatus.ACCEPTED
 
 
+def test_production_notes_carry_from_quote_to_job(client):
+    customer_id = _create_customer(client)
+    client.post(
+        "/quotes",
+        data={
+            "customer_id": customer_id,
+            "notes": "Customer-facing note",
+            "production_notes": "Needs a 6mm end mill with 40mm reach; soft jaws op 2.",
+            "description": ["Bracket"],
+            "qty": ["1"],
+            "unit_price": ["100"],
+        },
+    )
+    from app.db import engine
+    from sqlmodel import Session, select
+    from app.models import Job, Quote
+
+    with Session(engine) as s:
+        quote = s.exec(select(Quote)).first()
+        assert quote.production_notes.startswith("Needs a 6mm")
+
+    client.post(f"/quotes/{quote.id}/accept")
+
+    with Session(engine) as s:
+        job = s.exec(select(Job)).first()
+    # Shop notes followed the quote onto the job; customer note did not leak in.
+    assert job.production_notes == "Needs a 6mm end mill with 40mm reach; soft jaws op 2."
+
+
 def test_invoice_flow_moves_job_to_invoiced_then_paid(client):
     customer_id = _create_customer(client)
     client.post(

@@ -22,6 +22,10 @@
   <label>Notes
     <textarea name="notes" rows="3">{{ job.notes or '' if job else '' }}</textarea>
   </label>
+  <label>Production / shop notes <small>(tooling, fixturing, setup, QC — the shop's memory for this part)</small>
+    <textarea name="production_notes" rows="4"
+              placeholder="e.g. Requires a 6mm end mill with 40mm reach; soft jaws for op 2.">{{ job.production_notes or '' if job else '' }}</textarea>
+  </label>
   <button type="submit">Save job</button>
   <a href="{{ '/jobs/' ~ job.id if job else '/jobs' }}" role="button" class="secondary">Cancel</a>
 </form>

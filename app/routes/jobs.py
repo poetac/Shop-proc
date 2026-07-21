@@ -64,6 +64,7 @@ async def create_job(
     title: str = Form(...),
     due_date: str = Form(""),
     notes: str = Form(""),
+    production_notes: str = Form(""),
     session: Session = Depends(get_session),
 ):
     from app.routes.helpers import next_job_number
@@ -74,6 +75,7 @@ async def create_job(
         title=title,
         due_date=_parse_date(due_date),
         notes=notes or None,
+        production_notes=production_notes or None,
     )
     session.add(job)
     session.commit()
@@ -121,6 +123,7 @@ async def update_job(
     title: str = Form(...),
     due_date: str = Form(""),
     notes: str = Form(""),
+    production_notes: str = Form(""),
     session: Session = Depends(get_session),
 ):
     job = session.get(Job, job_id)
@@ -130,6 +133,7 @@ async def update_job(
     job.title = title
     job.due_date = _parse_date(due_date)
     job.notes = notes or None
+    job.production_notes = production_notes or None
     session.add(job)
     session.commit()
     return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)

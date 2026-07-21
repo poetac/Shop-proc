@@ -57,6 +57,7 @@ async def create_quote(
     request: Request,
     customer_id: int = Form(...),
     notes: str = Form(""),
+    production_notes: str = Form(""),
     description: list[str] = Form(default=[]),
     qty: list[str] = Form(default=[]),
     unit_price: list[str] = Form(default=[]),
@@ -66,6 +67,7 @@ async def create_quote(
         customer_id=customer_id,
         quote_number=next_quote_number(session),
         notes=notes or None,
+        production_notes=production_notes or None,
     )
     _apply_lines(quote, description, qty, unit_price)
     session.add(quote)
@@ -133,6 +135,7 @@ async def update_quote(
     quote_id: int,
     customer_id: int = Form(...),
     notes: str = Form(""),
+    production_notes: str = Form(""),
     description: list[str] = Form(default=[]),
     qty: list[str] = Form(default=[]),
     unit_price: list[str] = Form(default=[]),
@@ -143,6 +146,7 @@ async def update_quote(
         return RedirectResponse(url="/quotes", status_code=303)
     quote.customer_id = customer_id
     quote.notes = notes or None
+    quote.production_notes = production_notes or None
     # Replace lines wholesale (simplest correct approach for low volume).
     for line in list(quote.lines):
         session.delete(line)
@@ -192,6 +196,8 @@ async def accept_quote(
         title=title,
         status=JobStatus.ACCEPTED,
         notes=quote.notes,
+        # Carry the shop's quoting notes through to the job floor.
+        production_notes=quote.production_notes,
     )
     session.add(job)
     session.commit()

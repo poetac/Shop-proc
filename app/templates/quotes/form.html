@@ -40,8 +40,13 @@
   </table>
   <button type="button" class="secondary" onclick="addLine()">+ Add line</button>
 
-  <label style="margin-top:1rem;">Notes
-    <textarea name="notes" rows="3">{{ quote.notes or '' if quote else '' }}</textarea>
+  <label style="margin-top:1rem;">Customer notes <small>(shown on the printed quote)</small>
+    <textarea name="notes" rows="2">{{ quote.notes or '' if quote else '' }}</textarea>
+  </label>
+
+  <label>Production / shop notes <small>(internal — tooling, fixturing, setup; carries through to the job, never printed)</small>
+    <textarea name="production_notes" rows="4"
+              placeholder="e.g. Requires a 6mm end mill with 40mm reach; soft jaws for op 2; check flatness on the granite.">{{ quote.production_notes or '' if quote else '' }}</textarea>
   </label>
 
   <button type="submit">Save quote</button>

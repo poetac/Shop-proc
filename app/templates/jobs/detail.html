@@ -52,6 +52,14 @@
   {% if job.notes %}<p><strong>Notes:</strong><br>{{ job.notes }}</p>{% endif %}
 </article>
 
+{% if job.production_notes %}
+<article style="background:var(--pico-card-sectioning-background-color);">
+  <strong>🔧 Production / shop notes</strong>
+  <p style="white-space:pre-wrap;margin:0.5rem 0 0;">{{ job.production_notes }}</p>
+  {% if job.quote %}<small>Started on quote {{ job.quote.quote_number }}. Edit via the job's Edit page.</small>{% endif %}
+</article>
+{% endif %}
+
 <h3>Files</h3>
 <p><small>Drawings, prints, PDFs, STEP/CAD. Up to 25 MB each.</small></p>
 {% if job.files %}

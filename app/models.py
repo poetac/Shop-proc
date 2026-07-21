@@ -72,6 +72,10 @@ class Quote(SQLModel, table=True):
     quote_number: str = Field(index=True)
     status: QuoteStatus = Field(default=QuoteStatus.DRAFT)
     notes: Optional[str] = None
+    # Internal shop/production notes captured while quoting (e.g. "needs a
+    # 6mm end mill with 40mm reach"). Carried forward to the job on acceptance
+    # and never shown on the customer-facing print.
+    production_notes: Optional[str] = None
     created_at: datetime = Field(default_factory=_utcnow)
 
     customer: Optional[Customer] = Relationship(back_populates="quotes")
@@ -101,6 +105,9 @@ class Job(SQLModel, table=True):
     due_date: Optional[date] = None
     status: JobStatus = Field(default=JobStatus.ACCEPTED)
     notes: Optional[str] = None
+    # Shop/production notes, carried forward from the quote and editable as the
+    # job runs. This is the shop's memory for the part (tooling, fixturing, QC).
+    production_notes: Optional[str] = None
     created_at: datetime = Field(default_factory=_utcnow)
 
     customer: Optional[Customer] = Relationship(back_populates="jobs")
