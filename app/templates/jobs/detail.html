@@ -6,6 +6,8 @@
   <p>{{ job.job_number }} · Status: <strong>{{ job.status.value }}</strong></p>
 </hgroup>
 
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+
 <div class="inline-actions">
   <a href="/jobs/{{ job.id }}/edit" role="button" class="secondary">Edit</a>
 

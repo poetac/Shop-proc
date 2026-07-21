@@ -114,13 +114,21 @@ async def import_customers(
 
 @router.get("/{customer_id}")
 async def customer_detail(
-    customer_id: int, request: Request, session: Session = Depends(get_session)
+    customer_id: int,
+    request: Request,
+    error: str = "",
+    session: Session = Depends(get_session),
 ):
     customer = session.get(Customer, customer_id)
     if not customer:
         return RedirectResponse(url="/customers", status_code=303)
+    messages = {
+        "has_records": "Can't delete a customer that still has quotes, jobs, or "
+        "invoices. Remove or reassign those first.",
+    }
     return render(
-        "customers/detail.html", {"request": request, "customer": customer}
+        "customers/detail.html",
+        {"request": request, "customer": customer, "error": messages.get(error)},
     )
 
 
@@ -166,7 +174,14 @@ async def delete_customer(
     customer_id: int, session: Session = Depends(get_session)
 ):
     customer = session.get(Customer, customer_id)
-    if customer:
-        session.delete(customer)
-        session.commit()
+    if not customer:
+        return RedirectResponse(url="/customers", status_code=303)
+    # Block deletion when the customer still has records — otherwise the delete
+    # fails at the DB with a NOT NULL / FK error. Ask the owner to clear them.
+    if customer.quotes or customer.jobs or customer.invoices:
+        return RedirectResponse(
+            url=f"/customers/{customer_id}?error=has_records", status_code=303
+        )
+    session.delete(customer)
+    session.commit()
     return RedirectResponse(url="/customers", status_code=303)

@@ -10,3 +10,30 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
+
+  package:
+    # Guards against shipping a wheel that's missing routes/logic/templates/
+    # static (the app would crash-loop in the container). Builds and installs
+    # the real wheel, then imports and checks assets exist — from a directory
+    # where the source tree can't shadow the installed package.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build --wheel
+      - run: pip install dist/*.whl
+      - name: Import installed package and verify bundled assets
+        run: |
+          cd /tmp
+          python - <<'PY'
+          import pathlib, app
+          from app.deps import TEMPLATES_DIR
+          import app.main, app.routes.reports, app.logic.reports  # crash-loop canaries
+          assert (TEMPLATES_DIR / "base.html").exists(), "templates missing from wheel"
+          static = pathlib.Path(app.__file__).parent / "static" / "app.css"
+          assert static.exists(), "static assets missing from wheel"
+          print("wheel OK:", pathlib.Path(app.__file__).parent)
+          PY

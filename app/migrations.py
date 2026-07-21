@@ -22,6 +22,17 @@ _COLUMNS: list[tuple[str, str, str]] = [
     ("invoice", "last_reminded_at", "TEXT"),
 ]
 
+# (index_name, table, column) unique indexes — backstops for numbering and the
+# one-invoice-per-job invariant. CREATE UNIQUE INDEX IF NOT EXISTS is idempotent
+# and will fail loudly only if existing data already contains duplicates (which
+# the owner would want to know about before it bites).
+_UNIQUE_INDEXES: list[tuple[str, str, str]] = [
+    ("ux_quote_number", "quote", "quote_number"),
+    ("ux_job_number", "job", "job_number"),
+    ("ux_invoice_number", "invoice", "invoice_number"),
+    ("ux_invoice_job_id", "invoice", "job_id"),
+]
+
 
 def _existing_columns(conn, table: str) -> set[str]:
     rows = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
@@ -42,3 +53,16 @@ def run_migrations(engine: Engine) -> None:
                 continue
             if column not in _existing_columns(conn, table):
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {sqltype}"))
+
+        for index_name, table, column in _UNIQUE_INDEXES:
+            if not conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name=:t"),
+                {"t": table},
+            ).fetchone():
+                continue
+            conn.execute(
+                text(
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table} ({column})"
+                )
+            )

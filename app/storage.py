@@ -47,7 +47,7 @@ def absolute_path(stored_path: str) -> Path:
     """Resolve a stored path back to an absolute path, guarding against escapes."""
     base = UPLOAD_DIR.resolve()
     full = (UPLOAD_DIR / stored_path).resolve()
-    if not str(full).startswith(str(base)):
+    if not full.is_relative_to(base):
         raise ValueError("path escapes upload directory")
     return full
 

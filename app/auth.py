@@ -18,8 +18,9 @@ APP_USERNAME = os.getenv("APP_USERNAME", "owner")
 APP_PASSWORD_HASH = os.getenv("APP_PASSWORD_HASH", "")
 
 # Routes reachable without a session.
-PUBLIC_PATHS = {"/login", "/logout"}
-PUBLIC_PREFIXES = ("/static",)
+PUBLIC_PATHS = {"/login", "/logout", "/healthz"}
+# Trailing slash so a future route like "/static-report" isn't treated as public.
+PUBLIC_PREFIXES = ("/static/",)
 
 
 def verify_password(password: str) -> bool:

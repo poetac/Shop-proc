@@ -13,6 +13,7 @@ set -euo pipefail
 
 DB_PATH="${DB_PATH:-/data/shop.db}"
 BACKUP_DIR="${BACKUP_DIR:-/data/backups}"
+UPLOAD_DIR="${UPLOAD_DIR:-/data/uploads}"
 KEEP="${KEEP:-14}"
 
 if [[ ! -f "$DB_PATH" ]]; then
@@ -24,13 +25,25 @@ mkdir -p "$BACKUP_DIR"
 stamp="$(date +%Y%m%d-%H%M%S)"
 dest="$BACKUP_DIR/shop-$stamp.db"
 
-# Consistent hot copy.
+# Consistent hot copy of the database.
 sqlite3 "$DB_PATH" ".backup '$dest'"
 gzip -f "$dest"
 echo "backup: wrote ${dest}.gz"
 
-# Prune old copies, keeping the most recent $KEEP.
-ls -1t "$BACKUP_DIR"/shop-*.db.gz 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
-  rm -f "$old"
-  echo "backup: pruned $old"
-done
+# Also archive uploaded files (drawings/prints/CAD) — they are part of the
+# shop's memory and are useless if the DB is restored without them.
+if [[ -d "$UPLOAD_DIR" ]]; then
+  uploads_dest="$BACKUP_DIR/uploads-$stamp.tgz"
+  tar czf "$uploads_dest" -C "$(dirname "$UPLOAD_DIR")" "$(basename "$UPLOAD_DIR")"
+  echo "backup: wrote $uploads_dest"
+fi
+
+# Prune old copies, keeping the most recent $KEEP of each kind.
+prune() {
+  ls -1t "$BACKUP_DIR"/$1 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
+    rm -f "$old"
+    echo "backup: pruned $old"
+  done
+}
+prune "shop-*.db.gz"
+prune "uploads-*.tgz"

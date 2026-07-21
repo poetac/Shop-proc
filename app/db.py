@@ -5,13 +5,30 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 
+from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./shop.db")
 
-# check_same_thread=False is required for SQLite under FastAPI's threadpool.
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+# check_same_thread=False is required for SQLite under FastAPI's threadpool;
+# timeout makes writers wait for a lock instead of erroring instantly (e.g. a
+# request landing during a backup).
+connect_args = {"check_same_thread": False, "timeout": 30} if _is_sqlite else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
+
+if _is_sqlite:
+
+    @event.listens_for(engine, "connect")
+    def _sqlite_pragmas(dbapi_conn, _record):
+        """WAL lets readers/backups and a writer coexist; busy_timeout waits on
+        locks; foreign_keys enforces referential integrity."""
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL")
+        cur.execute("PRAGMA busy_timeout=30000")
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
 
 
 def init_db() -> None:

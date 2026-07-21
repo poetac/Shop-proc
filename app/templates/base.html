@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}CNC Shop Ops{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <script src="/static/htmx.min.js"></script>
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
@@ -23,7 +23,11 @@
         <li><a href="/reports">Reports</a></li>
         <li><a href="/reminders">Reminders</a></li>
         <li><a href="/settings">Settings</a></li>
-        <li><a href="/logout">Logout</a></li>
+        <li>
+          <form method="post" action="/logout" style="margin:0;display:inline;">
+            <button type="submit" class="secondary" style="padding:0.2rem 0.6rem;margin:0;">Logout</button>
+          </form>
+        </li>
       </ul>
     </nav>
   </header>

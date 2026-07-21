@@ -69,7 +69,7 @@ class Customer(SQLModel, table=True):
 class Quote(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.id")
-    quote_number: str = Field(index=True)
+    quote_number: str = Field(index=True, unique=True)
     status: QuoteStatus = Field(default=QuoteStatus.DRAFT)
     notes: Optional[str] = None
     # Internal shop/production notes captured while quoting (e.g. "needs a
@@ -100,7 +100,7 @@ class Job(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.id")
     quote_id: Optional[int] = Field(default=None, foreign_key="quote.id")
-    job_number: str = Field(index=True)
+    job_number: str = Field(index=True, unique=True)
     title: str
     due_date: Optional[date] = None
     status: JobStatus = Field(default=JobStatus.ACCEPTED)
@@ -144,9 +144,10 @@ class Invoice(SQLModel, table=True):
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    job_id: int = Field(foreign_key="job.id")
+    # unique job_id enforces the one-invoice-per-job invariant (HANDOFF.md §10).
+    job_id: int = Field(foreign_key="job.id", unique=True)
     customer_id: int = Field(foreign_key="customer.id")
-    invoice_number: str = Field(index=True)
+    invoice_number: str = Field(index=True, unique=True)
     amount: float = 0.0
     issue_date: date = Field(default_factory=date.today)
     due_date: date = Field(default_factory=date.today)

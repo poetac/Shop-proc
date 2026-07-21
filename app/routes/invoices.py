@@ -93,6 +93,12 @@ async def create_invoice(
     if not job:
         return RedirectResponse(url="/jobs", status_code=303)
 
+    # A job has at most one invoice (HANDOFF.md §10). Don't create a second —
+    # it would corrupt the 1-1 link and could revert a Paid job to Invoiced.
+    existing = session.exec(select(Invoice).where(Invoice.job_id == job.id)).first()
+    if existing:
+        return RedirectResponse(url=f"/invoices/{existing.id}", status_code=303)
+
     issue = _parse_date(issue_date) or date.today()
     due = _parse_date(due_date) or compute_due_date(issue)
     invoice = Invoice(

@@ -28,8 +28,11 @@ dev = [
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["templates/**/*.html", "static/**/*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
