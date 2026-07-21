@@ -14,9 +14,10 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.deps import render
+from app.deps import flash, render
 from app.logic.invoicing import due_date as compute_due_date
 from app.logic.invoicing import is_overdue
+from app.logic.parsing import parse_date
 from app.logic.quoting import quote_total
 from app.models import (
     Invoice,
@@ -97,10 +98,11 @@ async def create_invoice(
     # it would corrupt the 1-1 link and could revert a Paid job to Invoiced.
     existing = session.exec(select(Invoice).where(Invoice.job_id == job.id)).first()
     if existing:
+        flash(request, f"That job already has invoice {existing.invoice_number}.", "info")
         return RedirectResponse(url=f"/invoices/{existing.id}", status_code=303)
 
-    issue = _parse_date(issue_date) or date.today()
-    due = _parse_date(due_date) or compute_due_date(issue)
+    issue = parse_date(issue_date) or date.today()
+    due = parse_date(due_date) or compute_due_date(issue)
     invoice = Invoice(
         job_id=job.id,
         customer_id=job.customer_id,
@@ -119,6 +121,7 @@ async def create_invoice(
     session.add(job)
     session.commit()
     session.refresh(invoice)
+    flash(request, f"Invoice {invoice.invoice_number} created — job moved to Invoiced.")
     return RedirectResponse(url=f"/invoices/{invoice.id}", status_code=303)
 
 
@@ -149,10 +152,10 @@ async def update_invoice(
     invoice = session.get(Invoice, invoice_id)
     if not invoice:
         return RedirectResponse(url="/invoices", status_code=303)
-    issue = _parse_date(issue_date) or invoice.issue_date
+    issue = parse_date(issue_date) or invoice.issue_date
     invoice.amount = amount
     invoice.issue_date = issue
-    invoice.due_date = _parse_date(due_date) or compute_due_date(issue)
+    invoice.due_date = parse_date(due_date) or compute_due_date(issue)
     invoice.payment_method = PaymentMethod(payment_method) if payment_method else None
     invoice.qb_reference = qb_reference or None
     invoice.notes = notes or None
@@ -164,6 +167,7 @@ async def update_invoice(
 @router.post("/{invoice_id}/status")
 async def set_status(
     invoice_id: int,
+    request: Request,
     status: str = Form(...),
     payment_method: str = Form(""),
     session: Session = Depends(get_session),
@@ -193,6 +197,7 @@ async def set_status(
             session.add(job)
     session.add(invoice)
     session.commit()
+    flash(request, f"Invoice {invoice.invoice_number} marked {new_status.value}.")
     return RedirectResponse(url=f"/invoices/{invoice_id}", status_code=303)
 
 
@@ -211,11 +216,3 @@ async def delete_invoice(
         session.commit()
     return RedirectResponse(url="/invoices", status_code=303)
 
-
-def _parse_date(value: str) -> date | None:
-    if not value:
-        return None
-    try:
-        return date.fromisoformat(value)
-    except ValueError:
-        return None

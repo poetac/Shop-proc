@@ -6,8 +6,6 @@
   <p>{{ customer.company or "" }}</p>
 </hgroup>
 
-{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
-
 <div class="inline-actions">
   <a href="/customers/{{ customer.id }}/edit" role="button" class="secondary">Edit</a>
   <form method="post" action="/customers/{{ customer.id }}/delete"

@@ -3,8 +3,8 @@
 {% block content %}
 <h2>{{ "Edit job " ~ job.job_number if job else "New job" }}</h2>
 <form method="post" action="{{ '/jobs/' ~ job.id if job else '/jobs' }}">
-  <label>Customer *
-    <select name="customer_id" required>
+  <label>Customer {% if job %}*{% endif %}
+    <select name="customer_id" {% if job %}required{% endif %}>
       <option value="">— select —</option>
       {% for c in customers %}
       <option value="{{ c.id }}" {% if selected_customer_id == c.id %}selected{% endif %}>
@@ -13,6 +13,11 @@
       {% endfor %}
     </select>
   </label>
+  {% if not job %}
+  <label>…or add a new customer <small>(type a name to create one on the fly)</small>
+    <input type="text" name="new_customer" placeholder="New customer name">
+  </label>
+  {% endif %}
   <label>Title / part *
     <input type="text" name="title" required value="{{ job.title if job else '' }}">
   </label>

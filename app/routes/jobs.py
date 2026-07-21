@@ -14,9 +14,11 @@ from sqlmodel import Session, select
 
 from app import storage
 from app.db import get_session
-from app.deps import render
+from app.deps import flash, render
 from app.logic.jobs import JOB_FLOW, MANUAL_STAGES, can_manually_set, next_status, prev_status
-from app.models import Customer, Job, JobFile, JobStatus, Quote
+from app.logic.parsing import parse_date
+from app.models import Customer, Job, JobFile
+from app.routes.helpers import next_job_number
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -27,6 +29,7 @@ async def board(request: Request, session: Session = Depends(get_session)):
     columns = {status: [] for status in JOB_FLOW}
     for job in jobs:
         columns.setdefault(job.status, []).append(job)
+    customers = session.exec(select(Customer).order_by(Customer.name)).all()
     return render(
         "jobs/board.html",
         {
@@ -34,6 +37,9 @@ async def board(request: Request, session: Session = Depends(get_session)):
             "columns": columns,
             "flow": JOB_FLOW,
             "today": date.today(),
+            # Needed by the job-card partial so tap-to-move buttons render.
+            "manual_stages": MANUAL_STAGES,
+            "customers": customers,
         },
     )
 
@@ -60,46 +66,66 @@ async def new_job(
 @router.post("")
 async def create_job(
     request: Request,
-    customer_id: int = Form(...),
     title: str = Form(...),
+    customer_id: int | None = Form(None),
+    new_customer: str = Form(""),
     due_date: str = Form(""),
     notes: str = Form(""),
     production_notes: str = Form(""),
+    redirect: str = Form("detail"),
     session: Session = Depends(get_session),
 ):
-    from app.routes.helpers import next_job_number
+    customer = _resolve_customer(session, customer_id, new_customer)
+    if customer is None:
+        flash(request, "Pick a customer or type a new customer name.", "error")
+        return RedirectResponse(url="/jobs/new", status_code=303)
 
     job = Job(
-        customer_id=customer_id,
+        customer_id=customer.id,
         job_number=next_job_number(session),
         title=title,
-        due_date=_parse_date(due_date),
+        due_date=parse_date(due_date),
         notes=notes or None,
         production_notes=production_notes or None,
     )
     session.add(job)
     session.commit()
     session.refresh(job)
+    flash(request, f"Job {job.job_number} created for {customer.name}.")
+    if redirect == "board":
+        return RedirectResponse(url="/jobs", status_code=303)
     return RedirectResponse(url=f"/jobs/{job.id}", status_code=303)
+
+
+def _resolve_customer(
+    session: Session, customer_id: int | None, new_name: str
+) -> Customer | None:
+    """Find the selected customer, or create one from a typed name (reusing an
+    existing customer with the same name). Returns None if neither is given."""
+    new_name = (new_name or "").strip()
+    if new_name:
+        existing = session.exec(
+            select(Customer).where(Customer.name == new_name)
+        ).first()
+        if existing:
+            return existing
+        customer = Customer(name=new_name)
+        session.add(customer)
+        session.commit()
+        session.refresh(customer)
+        return customer
+    if customer_id:
+        return session.get(Customer, customer_id)
+    return None
 
 
 @router.get("/{job_id}")
 async def job_detail(
-    job_id: int,
-    request: Request,
-    error: str = "",
-    session: Session = Depends(get_session),
+    job_id: int, request: Request, session: Session = Depends(get_session)
 ):
     job = session.get(Job, job_id)
     if not job:
         return RedirectResponse(url="/jobs", status_code=303)
-    messages = {
-        "has_invoice": "Can't delete a job that has an invoice. Delete the "
-        "linked invoice first.",
-        "bad_file": "That file type isn't allowed. Use PDF, image, or CAD "
-        "(STEP/STL/DXF/DWG) files.",
-        "too_big": f"That file is too large (max {storage.MAX_BYTES // (1024 * 1024)} MB).",
-    }
     return render(
         "jobs/detail.html",
         {
@@ -107,7 +133,6 @@ async def job_detail(
             "job": job,
             "manual_stages": MANUAL_STAGES,
             "today": date.today(),
-            "error": messages.get(error),
         },
     )
 
@@ -135,6 +160,7 @@ async def edit_job(
 @router.post("/{job_id}")
 async def update_job(
     job_id: int,
+    request: Request,
     customer_id: int = Form(...),
     title: str = Form(...),
     due_date: str = Form(""),
@@ -147,11 +173,12 @@ async def update_job(
         return RedirectResponse(url="/jobs", status_code=303)
     job.customer_id = customer_id
     job.title = title
-    job.due_date = _parse_date(due_date)
+    job.due_date = parse_date(due_date)
     job.notes = notes or None
     job.production_notes = production_notes or None
     session.add(job)
     session.commit()
+    flash(request, f"Job {job.job_number} updated.")
     return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
 
 
@@ -181,21 +208,24 @@ async def move_job(
 
 
 @router.post("/{job_id}/delete")
-async def delete_job(job_id: int, session: Session = Depends(get_session)):
+async def delete_job(
+    job_id: int, request: Request, session: Session = Depends(get_session)
+):
     job = session.get(Job, job_id)
     if not job:
         return RedirectResponse(url="/jobs", status_code=303)
     # Block deletion while an invoice is linked (its job_id is NOT NULL, so the
     # delete would fail at the DB). Delete the invoice first if truly intended.
     if job.invoice:
-        return RedirectResponse(
-            url=f"/jobs/{job_id}?error=has_invoice", status_code=303
-        )
+        flash(request, "Can't delete a job that has an invoice. Delete the linked invoice first.", "error")
+        return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
     # Remove attachment bytes from disk before the file rows cascade-delete.
     for f in job.files:
         storage.delete_file(f.stored_path)
+    number = job.job_number
     session.delete(job)
     session.commit()
+    flash(request, f"Deleted job {number}.")
     return RedirectResponse(url="/jobs", status_code=303)
 
 
@@ -205,6 +235,7 @@ async def delete_job(job_id: int, session: Session = Depends(get_session)):
 @router.post("/{job_id}/files")
 async def upload_file(
     job_id: int,
+    request: Request,
     upload: UploadFile = File(...),
     session: Session = Depends(get_session),
 ):
@@ -214,10 +245,12 @@ async def upload_file(
 
     filename = upload.filename or "file"
     if not storage.is_allowed(filename):
-        return RedirectResponse(url=f"/jobs/{job_id}?error=bad_file", status_code=303)
+        flash(request, "That file type isn't allowed. Use PDF, image, or CAD (STEP/STL/DXF/DWG) files.", "error")
+        return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
 
     # Read in bounded chunks so an oversized upload can't exhaust memory: stop
-    # as soon as we exceed the cap (read one byte past to detect the overflow).
+    # as soon as we exceed the cap.
+    max_mb = storage.MAX_BYTES // (1024 * 1024)
     chunks: list[bytes] = []
     total = 0
     while True:
@@ -226,7 +259,8 @@ async def upload_file(
             break
         total += len(chunk)
         if total > storage.MAX_BYTES:
-            return RedirectResponse(url=f"/jobs/{job_id}?error=too_big", status_code=303)
+            flash(request, f"That file is too large (max {max_mb} MB).", "error")
+            return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
         chunks.append(chunk)
 
     data = b"".join(chunks)
@@ -234,6 +268,7 @@ async def upload_file(
         stored = storage.save_upload(job_id, filename, data)
         session.add(JobFile(job_id=job_id, filename=filename, stored_path=stored))
         session.commit()
+        flash(request, f"Attached {filename}.")
     return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
 
 
@@ -261,12 +296,3 @@ async def delete_file(
         session.delete(job_file)
         session.commit()
     return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
-
-
-def _parse_date(value: str) -> date | None:
-    if not value:
-        return None
-    try:
-        return date.fromisoformat(value)
-    except ValueError:
-        return None

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
 from app.logic.invoicing import is_due_soon, is_overdue
@@ -28,9 +29,25 @@ def money(value: float | None) -> str:
 templates.env.filters["money"] = money
 
 
+# --------------------------------------------------------------------------- #
+# One-time flash messages (survive a redirect via the session cookie).
+# Any route can call flash(request, "...") before redirecting; the next page
+# render pops and displays them. Categories map to styling in base.html.
+# --------------------------------------------------------------------------- #
+def flash(request: Request, message: str, category: str = "success") -> None:
+    request.session.setdefault("_flashes", []).append(
+        {"message": message, "category": category}
+    )
+
+
+def pop_flashes(request: Request) -> list[dict]:
+    return request.session.pop("_flashes", [])
+
+
 def render(name: str, context: dict, **kwargs):
     """Render a template. Thin wrapper over Starlette's TemplateResponse that
-    keeps the (name, context) call order while satisfying the current API,
-    which requires the request as the first argument."""
+    keeps the (name, context) call order while satisfying the current API.
+    Auto-injects any pending flash messages so every page shows them."""
     request = context["request"]
+    context.setdefault("flashes", pop_flashes(request))
     return templates.TemplateResponse(request, name, context, **kwargs)

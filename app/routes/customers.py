@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, or_, select
 
 from app.db import get_session
-from app.deps import render
+from app.deps import flash, render
 from app.logic.csv_import import parse_customers
 from app.models import Customer
 
@@ -114,21 +114,13 @@ async def import_customers(
 
 @router.get("/{customer_id}")
 async def customer_detail(
-    customer_id: int,
-    request: Request,
-    error: str = "",
-    session: Session = Depends(get_session),
+    customer_id: int, request: Request, session: Session = Depends(get_session)
 ):
     customer = session.get(Customer, customer_id)
     if not customer:
         return RedirectResponse(url="/customers", status_code=303)
-    messages = {
-        "has_records": "Can't delete a customer that still has quotes, jobs, or "
-        "invoices. Remove or reassign those first.",
-    }
     return render(
-        "customers/detail.html",
-        {"request": request, "customer": customer, "error": messages.get(error)},
+        "customers/detail.html", {"request": request, "customer": customer}
     )
 
 
@@ -171,7 +163,7 @@ async def update_customer(
 
 @router.post("/{customer_id}/delete")
 async def delete_customer(
-    customer_id: int, session: Session = Depends(get_session)
+    customer_id: int, request: Request, session: Session = Depends(get_session)
 ):
     customer = session.get(Customer, customer_id)
     if not customer:
@@ -179,9 +171,15 @@ async def delete_customer(
     # Block deletion when the customer still has records — otherwise the delete
     # fails at the DB with a NOT NULL / FK error. Ask the owner to clear them.
     if customer.quotes or customer.jobs or customer.invoices:
-        return RedirectResponse(
-            url=f"/customers/{customer_id}?error=has_records", status_code=303
+        flash(
+            request,
+            "Can't delete a customer that still has quotes, jobs, or invoices. "
+            "Remove or reassign those first.",
+            "error",
         )
+        return RedirectResponse(url=f"/customers/{customer_id}", status_code=303)
+    name = customer.name
     session.delete(customer)
     session.commit()
+    flash(request, f"Deleted customer {name}.")
     return RedirectResponse(url="/customers", status_code=303)

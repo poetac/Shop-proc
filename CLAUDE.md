@@ -22,6 +22,12 @@ Python 3.12, FastAPI, Jinja2 + HTMX, Pico.css, SQLite via SQLModel, session auth
 ## Where things live
 app/models.py (entities) · app/routes/ (one router per module) · app/templates/ (Jinja + HTMX partials) · app/logic/ (tested pure logic) · tests/ (pytest).
 
+## Shared building blocks (reuse these; don't re-implement)
+- `app/deps.py`: `render(name, ctx)` (use instead of TemplateResponse) and `flash(request, msg, category)` — one-time messages shown on the next page via base.html. Prefer flashes over ad-hoc `?error=` params.
+- `app/logic/parsing.py`: `parse_date`, `to_float` for lenient form parsing.
+- `app/routes/helpers.py`: `next_quote_number` / `next_job_number` / `next_invoice_number`.
+- Numbers (Q/J/INV) and `invoice.job_id` are DB-unique; deletes of records with children are blocked (see routes). New nullable columns go in `app/migrations.py`.
+
 ## Running locally
 ```
 python -m venv .venv && source .venv/bin/activate

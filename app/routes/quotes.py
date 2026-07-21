@@ -11,7 +11,8 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.deps import render
+from app.deps import flash, render
+from app.logic.parsing import to_float
 from app.logic.quoting import quote_total
 from app.models import (
     Customer,
@@ -173,7 +174,7 @@ async def set_status(
 
 @router.post("/{quote_id}/accept")
 async def accept_quote(
-    quote_id: int, session: Session = Depends(get_session)
+    quote_id: int, request: Request, session: Session = Depends(get_session)
 ):
     """Accept the quote and create a pre-filled Job at *Accepted* (§11)."""
     quote = session.get(Quote, quote_id)
@@ -186,6 +187,7 @@ async def accept_quote(
     existing = session.exec(select(Job).where(Job.quote_id == quote_id)).first()
     if existing:
         session.commit()
+        flash(request, f"Quote already accepted — job {existing.job_number}.", "info")
         return RedirectResponse(url=f"/jobs/{existing.id}", status_code=303)
 
     title = quote.lines[0].description if quote.lines else f"Job from {quote.quote_number}"
@@ -202,6 +204,7 @@ async def accept_quote(
     session.add(job)
     session.commit()
     session.refresh(job)
+    flash(request, f"Quote accepted — created job {job.job_number}.")
     return RedirectResponse(url=f"/jobs/{job.id}", status_code=303)
 
 
@@ -230,14 +233,8 @@ def _apply_lines(
         quote.lines.append(
             QuoteLine(
                 description=desc,
-                qty=_to_float(qtys[i] if i < len(qtys) else "1"),
-                unit_price=_to_float(unit_prices[i] if i < len(unit_prices) else "0"),
+                qty=to_float(qtys[i] if i < len(qtys) else "1"),
+                unit_price=to_float(unit_prices[i] if i < len(unit_prices) else "0"),
             )
         )
 
-
-def _to_float(value: str) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
