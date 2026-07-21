@@ -7,6 +7,17 @@ sending, and payment collection. The invoice records here are a lightweight
 mirror tied back to QuickBooks by a `qb_reference`. See [`HANDOFF.md`](HANDOFF.md)
 for the full spec and [`CLAUDE.md`](CLAUDE.md) for maintenance rules.
 
+## Features
+- **Customers** — CRUD, live search, CSV import, detail page with related records.
+- **Quotes** — multi-line items with auto-total, status flow, one-click convert-to-job,
+  print/PDF view, and **production/shop notes** that carry through to the job.
+- **Jobs board** — kanban by stage, tap-to-move, file attachments (drawings/prints/CAD).
+- **Invoices** — QuickBooks status mirror, Net 30 due dates, computed overdue flag, receivables.
+- **Dashboard** — outstanding, overdue, active jobs, due-soon, quotes awaiting.
+- **Reports** — revenue by month/customer and quote win rate (operational/indicative only).
+- **Reminders** — an owner operations digest (overdue / due-soon) you can email to yourself.
+- **Settings** — business info and Net 30 default; auto-numbering `Q-/J-/INV-YYYY-NNN`.
+
 ## Stack
 Python 3.12 · FastAPI · Jinja2 + HTMX · Pico.css · SQLite (SQLModel) · session auth.
 
@@ -59,3 +70,20 @@ scripts/backup.sh
 scripts/restore.sh /data/backups/shop-YYYYMMDD-HHMMSS.db.gz /data/shop.db
 ```
 Verify a restore into a scratch path **before** relying on it in production.
+
+## Email reminders (optional)
+Set the `SMTP_*` vars in `.env` to enable the owner reminder digest (overdue and
+due-soon items). With SMTP off, the **Reminders** page still previews everything
+on screen. To email yourself on a schedule, run the cron entry point:
+```bash
+# Weekday mornings at 7am:
+0 7 * * 1-5  cd /app && python scripts/send_reminders.py >> /var/log/shop-reminders.log 2>&1
+```
+These digests go to **you**, not customers — QuickBooks still owns invoice
+sending and payment collection.
+
+## Roadmap status
+Built beyond the v1 brief: customer CSV import, reports, and owner email
+reminders. Still deferred (see `HANDOFF.md` §14): live QuickBooks Online API
+sync (needs your OAuth app credentials), multi-user, inventory/materials, and
+partial-payment tracking.
