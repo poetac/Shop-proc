@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Quotes · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Quotes</h2>
+<p><a href="/quotes/new" role="button">+ New quote</a></p>
+
+{% if quotes %}
+<table class="compact">
+  <thead><tr><th>Quote</th><th>Customer</th><th>Status</th><th>Total</th><th>Created</th></tr></thead>
+  <tbody>
+    {% for q in quotes %}
+    <tr>
+      <td><a href="/quotes/{{ q.id }}">{{ q.quote_number }}</a></td>
+      <td>{{ q.customer.name if q.customer else "" }}</td>
+      <td>{{ q.status.value }}</td>
+      <td>{{ quote_total(q.lines) | money }}</td>
+      <td>{{ q.created_at.date() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No quotes yet.</em></p>{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Jobs board · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Jobs board</h2>
+<p><a href="/jobs/new" role="button">+ New job</a></p>
+
+<div class="board">
+  {% for status in flow %}
+  <div class="board-col">
+    <h4>{{ status.value }} <span class="count">({{ columns[status] | length }})</span></h4>
+    {% for job in columns[status] %}
+      {% include "partials/job_card.html" %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

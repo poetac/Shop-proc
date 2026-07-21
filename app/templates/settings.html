@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Settings · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Settings</h2>
+<p><small>Business info is for reference only. QuickBooks owns the books.</small></p>
+<form method="post" action="/settings">
+  <label>Business name
+    <input type="text" name="business_name" value="{{ settings.business_name }}">
+  </label>
+  <label>Business address
+    <textarea name="business_address" rows="2">{{ settings.business_address }}</textarea>
+  </label>
+  <label>Default payment terms (days)
+    <input type="number" name="net_terms_days" value="{{ settings.net_terms_days }}">
+  </label>
+  <button type="submit">Save settings</button>
+</form>
+{% endblock %}

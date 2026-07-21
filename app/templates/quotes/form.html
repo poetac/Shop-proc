@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if quote else "New" }} quote · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>{{ "Edit quote " ~ quote.quote_number if quote else "New quote" }}</h2>
+
+<form method="post" action="{{ '/quotes/' ~ quote.id if quote else '/quotes' }}">
+  <label>Customer *
+    <select name="customer_id" required>
+      <option value="">— select —</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}" {% if selected_customer_id == c.id %}selected{% endif %}>
+        {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <h4>Line items</h4>
+  <table class="compact" id="lines">
+    <thead><tr><th>Description</th><th style="width:6rem">Qty</th><th style="width:8rem">Unit price</th><th></th></tr></thead>
+    <tbody>
+      {% if quote and quote.lines %}
+        {% for line in quote.lines %}
+        <tr>
+          <td><input type="text" name="description" value="{{ line.description }}"></td>
+          <td><input type="number" step="any" name="qty" value="{{ line.qty }}"></td>
+          <td><input type="number" step="any" name="unit_price" value="{{ line.unit_price }}"></td>
+          <td><button type="button" class="secondary outline" onclick="this.closest('tr').remove()">✕</button></td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td><input type="text" name="description"></td>
+          <td><input type="number" step="any" name="qty" value="1"></td>
+          <td><input type="number" step="any" name="unit_price" value="0"></td>
+          <td><button type="button" class="secondary outline" onclick="this.closest('tr').remove()">✕</button></td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <button type="button" class="secondary" onclick="addLine()">+ Add line</button>
+
+  <label style="margin-top:1rem;">Notes
+    <textarea name="notes" rows="3">{{ quote.notes or '' if quote else '' }}</textarea>
+  </label>
+
+  <button type="submit">Save quote</button>
+  <a href="{{ '/quotes/' ~ quote.id if quote else '/quotes' }}" role="button" class="secondary">Cancel</a>
+</form>
+
+<script>
+function addLine() {
+  const tbody = document.querySelector('#lines tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" name="description"></td>' +
+    '<td><input type="number" step="any" name="qty" value="1"></td>' +
+    '<td><input type="number" step="any" name="unit_price" value="0"></td>' +
+    '<td><button type="button" class="secondary outline" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  tbody.appendChild(tr);
+}
+</script>
+{% endblock %}

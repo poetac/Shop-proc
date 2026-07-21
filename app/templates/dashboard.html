@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="stats">
+  <a href="/invoices" class="stat">
+    <p class="value">{{ outstanding | money }}</p>
+    <p class="label">Outstanding receivables</p>
+  </a>
+  <a href="/invoices" class="stat {% if overdue_invoices %}alert{% endif %}">
+    <p class="value">{{ overdue_invoices | length }}</p>
+    <p class="label">Overdue invoices ({{ overdue_total | money }})</p>
+  </a>
+  <a href="/jobs" class="stat">
+    <p class="value">{{ active_jobs | length }}</p>
+    <p class="label">Active jobs</p>
+  </a>
+  <a href="/jobs" class="stat">
+    <p class="value">{{ due_soon_jobs | length }}</p>
+    <p class="label">Jobs due within 7 days</p>
+  </a>
+  <a href="/quotes" class="stat">
+    <p class="value">{{ sent_quotes | length }}</p>
+    <p class="label">Quotes awaiting response</p>
+  </a>
+</div>
+
+{% if overdue_invoices %}
+<h3>Overdue invoices</h3>
+<table class="compact">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th>Amount</th></tr></thead>
+  <tbody>
+    {% for inv in overdue_invoices %}
+    <tr>
+      <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.customer.name if inv.customer else "" }}</td>
+      <td>{{ inv.due_date }}</td>
+      <td>{{ inv.amount | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if due_soon_jobs %}
+<h3>Jobs due soon</h3>
+<table class="compact">
+  <thead><tr><th>Job</th><th>Title</th><th>Due</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for job in due_soon_jobs %}
+    <tr>
+      <td><a href="/jobs/{{ job.id }}">{{ job.job_number }}</a></td>
+      <td>{{ job.title }}</td>
+      <td><span class="flag flag-due-soon">{{ job.due_date }}</span></td>
+      <td>{{ job.status.value }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if sent_quotes %}
+<h3>Quotes awaiting response</h3>
+<table class="compact">
+  <thead><tr><th>Quote</th><th>Customer</th><th>Sent</th></tr></thead>
+  <tbody>
+    {% for q in sent_quotes %}
+    <tr>
+      <td><a href="/quotes/{{ q.id }}">{{ q.quote_number }}</a></td>
+      <td>{{ q.customer.name if q.customer else "" }}</td>
+      <td>{{ q.created_at.date() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

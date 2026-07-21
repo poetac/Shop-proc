@@ -1,0 +1,10 @@
+{% for c in customers %}
+<tr>
+  <td><a href="/customers/{{ c.id }}">{{ c.name }}</a></td>
+  <td>{{ c.company or "" }}</td>
+  <td>{{ c.email or "" }}</td>
+  <td>{{ c.phone or "" }}</td>
+</tr>
+{% else %}
+<tr><td colspan="4"><em>No customers found.</em></td></tr>
+{% endfor %}

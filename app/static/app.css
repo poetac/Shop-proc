@@ -1,0 +1,32 @@
+/* Small custom styles on top of Pico.css. Keep it minimal. */
+
+.error { color: var(--pico-del-color, #b00020); }
+
+/* Status flags (visual only in v1) — overdue red, due-soon amber. */
+.flag { font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 0.5rem; }
+.flag-overdue { background: #ffe0e0; color: #b00020; }
+.flag-due-soon { background: #fff3d6; color: #8a6d00; }
+.flag-ok { background: #e3f4e3; color: #1b6b1b; }
+
+/* Kanban board: horizontal scroll on small screens (mobile-friendly). */
+.board { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 1rem; }
+.board-col { flex: 0 0 15rem; min-width: 15rem; background: var(--pico-card-background-color); border-radius: 0.5rem; padding: 0.5rem; }
+.board-col h4 { font-size: 0.85rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.board-col .count { color: var(--pico-muted-color); font-weight: 400; }
+
+.job-card { background: var(--pico-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: 0.4rem; padding: 0.5rem; margin-bottom: 0.5rem; }
+.job-card h5 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+.job-card small { color: var(--pico-muted-color); }
+.job-card .move { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
+.job-card .move button { padding: 0.1rem 0.5rem; font-size: 0.8rem; margin: 0; width: auto; }
+
+/* Dashboard stat tiles. */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; }
+.stat { background: var(--pico-card-background-color); border-radius: 0.5rem; padding: 1rem; }
+.stat .value { font-size: 1.75rem; font-weight: 700; margin: 0; }
+.stat .label { color: var(--pico-muted-color); margin: 0; font-size: 0.85rem; }
+.stat.alert .value { color: #b00020; }
+
+table.compact td, table.compact th { padding: 0.4rem 0.6rem; }
+.inline-actions { display: inline-flex; gap: 0.5rem; }
+.inline-actions form { margin: 0; display: inline; }
