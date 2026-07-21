@@ -155,6 +155,9 @@ class Invoice(SQLModel, table=True):
     paid_date: Optional[date] = None
     qb_reference: Optional[str] = None
     notes: Optional[str] = None
+    # ISO timestamp of the last owner reminder digest that included this
+    # invoice (HANDOFF.md §14). Stored as text; None until first reminded.
+    last_reminded_at: Optional[str] = None
 
     job: Optional[Job] = Relationship(back_populates="invoice")
     customer: Optional[Customer] = Relationship(back_populates="invoices")

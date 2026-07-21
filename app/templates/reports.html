@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Reports · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Reports</h2>
+<p><small>Operational summaries derived from this app's records. <strong>QuickBooks is the source of truth for money</strong> — use these for a quick pulse, not for the books or taxes.</small></p>
+
+<div class="stats">
+  <div class="stat">
+    <p class="value">{{ collected_total | money }}</p>
+    <p class="label">Collected (paid invoices, all time)</p>
+  </div>
+  <div class="stat">
+    <p class="value">{{ (win.win_rate * 100) | round(1) }}%</p>
+    <p class="label">Quote win rate ({{ win.accepted }}/{{ win.decided }} decided)</p>
+  </div>
+  <div class="stat">
+    <p class="value">{{ win.accepted }} / {{ win.declined }}</p>
+    <p class="label">Quotes accepted / declined</p>
+  </div>
+</div>
+
+<h3>Revenue by month <small>(paid invoices)</small></h3>
+{% if by_month %}
+<table class="compact">
+  <thead><tr><th>Month</th><th style="width:55%">Collected</th><th style="text-align:right">Amount</th></tr></thead>
+  <tbody>
+    {% for month, amount in by_month %}
+    <tr>
+      <td>{{ month }}</td>
+      <td>
+        <div style="background:var(--pico-primary);height:0.9rem;border-radius:0.25rem;
+                    width:{{ ((amount / month_max) * 100) if month_max else 0 }}%;min-width:2px;"></div>
+      </td>
+      <td style="text-align:right">{{ amount | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No paid invoices yet.</em></p>{% endif %}
+
+<h3>Revenue by customer <small>(paid invoices)</small></h3>
+{% if by_customer %}
+<table class="compact">
+  <thead><tr><th>Customer</th><th style="text-align:right">Collected</th></tr></thead>
+  <tbody>
+    {% for name, amount in by_customer %}
+    <tr><td>{{ name }}</td><td style="text-align:right">{{ amount | money }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No paid invoices yet.</em></p>{% endif %}
+{% endblock %}

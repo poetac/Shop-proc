@@ -21,7 +21,16 @@ load_dotenv()
 from app import auth  # noqa: E402
 from app.db import init_db  # noqa: E402
 from app.deps import render  # noqa: E402
-from app.routes import customers, dashboard, invoices, jobs, quotes, settings  # noqa: E402
+from app.routes import (  # noqa: E402
+    customers,
+    dashboard,
+    invoices,
+    jobs,
+    quotes,
+    reminders,
+    reports,
+    settings,
+)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -87,4 +96,6 @@ app.include_router(customers.router)
 app.include_router(quotes.router)
 app.include_router(jobs.router)
 app.include_router(invoices.router)
+app.include_router(reports.router)
+app.include_router(reminders.router)
 app.include_router(settings.router)
