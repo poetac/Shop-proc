@@ -66,4 +66,4 @@ Status legend: ✅ Fixed · 🟡 Deferred (with reason) · ⬜ Won't fix (by des
 - `.gitignore` keeps secrets, the DB, uploads, and backups out of git.
 
 ## Test coverage added for the fixes
-`tests/test_hardening.py` (duplicate-invoice refusal, no Paid-job revert, delete-with-children blocked, healthz public, unauth redirect, security headers, POST-only logout, open-redirect guard, disallowed upload) and `tests/test_backup_restore.py` (backup→restore round-trip incl. uploads). Full suite: 45 passing + 1 skipped (backup test, runs in CI).
+`tests/test_hardening.py` (duplicate-invoice refusal, no Paid-job revert, delete-with-children blocked, healthz public, unauth redirect, security headers, POST-only logout, open-redirect guard, disallowed upload) and `tests/test_backup_restore.py` (backup→restore round-trip incl. uploads). Full suite: 52 passing + 1 skipped (backup test, runs in CI).
