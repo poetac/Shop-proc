@@ -87,6 +87,28 @@ async def quote_detail(
     )
 
 
+@router.get("/{quote_id}/print")
+async def quote_print(
+    quote_id: int, request: Request, session: Session = Depends(get_session)
+):
+    """Print-friendly quote (browser → Save as PDF). A minimal stand-in for
+    'PDF export' that needs no heavy PDF dependency."""
+    quote = session.get(Quote, quote_id)
+    if not quote:
+        return RedirectResponse(url="/quotes", status_code=303)
+    from app.routes.settings import get_settings
+
+    return render(
+        "quotes/print.html",
+        {
+            "request": request,
+            "quote": quote,
+            "total": quote_total(quote.lines),
+            "settings": get_settings(session),
+        },
+    )
+
+
 @router.get("/{quote_id}/edit")
 async def edit_quote(
     quote_id: int, request: Request, session: Session = Depends(get_session)

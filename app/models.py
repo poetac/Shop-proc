@@ -106,6 +106,26 @@ class Job(SQLModel, table=True):
     customer: Optional[Customer] = Relationship(back_populates="jobs")
     quote: Optional[Quote] = Relationship(back_populates="job")
     invoice: Optional["Invoice"] = Relationship(back_populates="job")
+    files: list["JobFile"] = Relationship(
+        back_populates="job",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class JobFile(SQLModel, table=True):
+    """A drawing/print/STEP file attached to a job (HANDOFF.md §8.3, §10).
+
+    The bytes live on disk (the persistent volume); this row keeps the original
+    filename and the stored path relative to the upload directory.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="job.id")
+    filename: str
+    stored_path: str
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    job: Optional[Job] = Relationship(back_populates="files")
 
 
 class Invoice(SQLModel, table=True):

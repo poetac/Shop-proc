@@ -11,6 +11,7 @@
 
 <div class="inline-actions">
   <a href="/quotes/{{ quote.id }}/edit" role="button" class="secondary">Edit</a>
+  <a href="/quotes/{{ quote.id }}/print" role="button" class="secondary outline" target="_blank">Print / PDF</a>
 
   {% if quote.status.value in ["Draft"] %}
   <form method="post" action="/quotes/{{ quote.id }}/status">

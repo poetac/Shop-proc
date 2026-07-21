@@ -31,6 +31,7 @@ Then open http://127.0.0.1:8000 and log in with `APP_USERNAME` / your password.
 | `APP_USERNAME` | Login username. |
 | `APP_PASSWORD_HASH` | bcrypt hash of the login password (see above). |
 | `DATABASE_URL` | SQLite URL, e.g. `sqlite:///./shop.db`. |
+| `UPLOAD_DIR` | Where job file attachments are stored (default `./uploads`). |
 
 ## Tests
 ```bash
@@ -43,8 +44,9 @@ every push (`.github/workflows/ci.yml`).
 ## Deploy
 1. Build the image: `docker build -t cnc-shop-ops .`
 2. Deploy to Render / Fly / Railway. Set the env vars above on the host.
-3. **Persist the SQLite volume** (the image mounts `/data`; set
-   `DATABASE_URL=sqlite:////data/shop.db`). A single Uvicorn worker is enough.
+3. **Persist the `/data` volume** — it holds both the SQLite DB
+   (`DATABASE_URL=sqlite:////data/shop.db`) and job file attachments
+   (`UPLOAD_DIR=/data/uploads`). A single Uvicorn worker is enough.
 
 ## Backups
 Daily backups + a tested restore are part of go-live (the data is the shop's

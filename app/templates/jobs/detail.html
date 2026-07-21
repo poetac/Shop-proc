@@ -52,5 +52,32 @@
   {% if job.notes %}<p><strong>Notes:</strong><br>{{ job.notes }}</p>{% endif %}
 </article>
 
+<h3>Files</h3>
+<p><small>Drawings, prints, PDFs, STEP/CAD. Up to 25 MB each.</small></p>
+{% if job.files %}
+<table class="compact">
+  <thead><tr><th>File</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+    {% for f in job.files %}
+    <tr>
+      <td><a href="/jobs/{{ job.id }}/files/{{ f.id }}">{{ f.filename }}</a></td>
+      <td>{{ f.created_at.date() }}</td>
+      <td>
+        <form method="post" action="/jobs/{{ job.id }}/files/{{ f.id }}/delete"
+              onsubmit="return confirm('Delete this file?');" style="margin:0;">
+          <button type="submit" class="secondary outline" style="padding:0.1rem 0.5rem;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No files attached.</em></p>{% endif %}
+
+<form method="post" action="/jobs/{{ job.id }}/files" enctype="multipart/form-data">
+  <input type="file" name="upload" required>
+  <button type="submit" class="secondary">Upload file</button>
+</form>
+
 <p style="margin-top:2rem;"><a href="/jobs">← Board</a></p>
 {% endblock %}

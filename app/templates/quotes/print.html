@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ quote.quote_number }} · Quote</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 720px; margin: 2rem auto; padding: 0 1.5rem; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a1a1a; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    .meta { text-align: right; font-size: 0.9rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }
+    th:last-child, td:last-child, th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3) { text-align: right; }
+    tfoot th { border-top: 2px solid #1a1a1a; border-bottom: none; font-size: 1.05rem; }
+    .notes { margin-top: 1.5rem; font-size: 0.9rem; white-space: pre-wrap; }
+    .print-btn { margin: 1rem 0; }
+    @media print { .print-btn { display: none; } body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+
+  <header>
+    <div>
+      <h1>{{ settings.business_name or "Quote" }}</h1>
+      {% if settings.business_address %}<div style="font-size:0.85rem;white-space:pre-wrap;">{{ settings.business_address }}</div>{% endif %}
+    </div>
+    <div class="meta">
+      <strong>QUOTE</strong><br>
+      {{ quote.quote_number }}<br>
+      {{ quote.created_at.date() }}
+    </div>
+  </header>
+
+  {% if quote.customer %}
+  <p><strong>To:</strong><br>
+    {{ quote.customer.name }}{% if quote.customer.company %}<br>{{ quote.customer.company }}{% endif %}
+    {% if quote.customer.billing_address %}<br>{{ quote.customer.billing_address }}{% endif %}
+  </p>
+  {% endif %}
+
+  <table>
+    <thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead>
+    <tbody>
+      {% for line in quote.lines %}
+      <tr>
+        <td>{{ line.description }}</td>
+        <td>{{ line.qty }}</td>
+        <td>{{ line.unit_price | money }}</td>
+        <td>{{ (line.qty * line.unit_price) | money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="3">Total</th><th>{{ total | money }}</th></tr>
+    </tfoot>
+  </table>
+
+  {% if quote.notes %}<div class="notes"><strong>Notes:</strong><br>{{ quote.notes }}</div>{% endif %}
+</body>
+</html>

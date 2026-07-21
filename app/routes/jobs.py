@@ -8,14 +8,15 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlmodel import Session, select
 
+from app import storage
 from app.db import get_session
 from app.deps import render
 from app.logic.jobs import JOB_FLOW, MANUAL_STAGES, can_manually_set, next_status, prev_status
-from app.models import Customer, Job, JobStatus, Quote
+from app.models import Customer, Job, JobFile, JobStatus, Quote
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -161,9 +162,60 @@ async def move_job(
 async def delete_job(job_id: int, session: Session = Depends(get_session)):
     job = session.get(Job, job_id)
     if job:
+        # Remove attachment bytes from disk before the rows cascade-delete.
+        for f in job.files:
+            storage.delete_file(f.stored_path)
         session.delete(job)
         session.commit()
     return RedirectResponse(url="/jobs", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# File attachments (drawings/prints/CAD) — HANDOFF.md §8.3
+# --------------------------------------------------------------------------- #
+@router.post("/{job_id}/files")
+async def upload_file(
+    job_id: int,
+    upload: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    job = session.get(Job, job_id)
+    if not job:
+        return RedirectResponse(url="/jobs", status_code=303)
+
+    filename = upload.filename or "file"
+    data = await upload.read()
+    if data and len(data) <= storage.MAX_BYTES and storage.is_allowed(filename):
+        stored = storage.save_upload(job_id, filename, data)
+        session.add(JobFile(job_id=job_id, filename=filename, stored_path=stored))
+        session.commit()
+    return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
+
+
+@router.get("/{job_id}/files/{file_id}")
+async def download_file(
+    job_id: int, file_id: int, session: Session = Depends(get_session)
+):
+    job_file = session.get(JobFile, file_id)
+    if not job_file or job_file.job_id != job_id:
+        return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
+    try:
+        path = storage.absolute_path(job_file.stored_path)
+    except ValueError:
+        return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
+    return FileResponse(path, filename=job_file.filename)
+
+
+@router.post("/{job_id}/files/{file_id}/delete")
+async def delete_file(
+    job_id: int, file_id: int, session: Session = Depends(get_session)
+):
+    job_file = session.get(JobFile, file_id)
+    if job_file and job_file.job_id == job_id:
+        storage.delete_file(job_file.stored_path)
+        session.delete(job_file)
+        session.commit()
+    return RedirectResponse(url=f"/jobs/{job_id}", status_code=303)
 
 
 def _parse_date(value: str) -> date | None:

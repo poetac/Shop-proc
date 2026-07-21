@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 # Must be set BEFORE importing the app: db.py and auth.py read env at import.
 _db_fd, _db_path = tempfile.mkstemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_db_path}"
+os.environ["UPLOAD_DIR"] = tempfile.mkdtemp(prefix="uploads-")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ["APP_USERNAME"] = "owner"
 os.environ["APP_PASSWORD_HASH"] = CryptContext(schemes=["bcrypt"]).hash("test")

@@ -10,8 +10,9 @@ COPY pyproject.toml README.md ./
 COPY app ./app
 RUN pip install --no-cache-dir .
 
-# SQLite DB lives here; mount a persistent volume at /data in production.
-ENV DATABASE_URL=sqlite:////data/shop.db
+# SQLite DB + uploaded files live here; mount a persistent volume at /data.
+ENV DATABASE_URL=sqlite:////data/shop.db \
+    UPLOAD_DIR=/data/uploads
 VOLUME ["/data"]
 
 EXPOSE 8000
