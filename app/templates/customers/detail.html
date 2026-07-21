@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }} · CNC Shop Ops{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>{{ customer.name }}</h2>
+  <p>{{ customer.company or "" }}</p>
+</hgroup>
+
+<div class="inline-actions">
+  <a href="/customers/{{ customer.id }}/edit" role="button" class="secondary">Edit</a>
+  <form method="post" action="/customers/{{ customer.id }}/delete"
+        onsubmit="return confirm('Delete this customer?');">
+    <button type="submit" class="secondary outline">Delete</button>
+  </form>
+</div>
+
+<article>
+  <p><strong>Email:</strong> {{ customer.email or "—" }}</p>
+  <p><strong>Phone:</strong> {{ customer.phone or "—" }}</p>
+  <p><strong>Billing address:</strong><br>{{ customer.billing_address or "—" }}</p>
+  {% if customer.notes %}<p><strong>Notes:</strong><br>{{ customer.notes }}</p>{% endif %}
+</article>
+
+<h3>Quotes <a href="/quotes/new?customer_id={{ customer.id }}" role="button" class="secondary outline">+ New</a></h3>
+{% if customer.quotes %}
+<table class="compact">
+  <thead><tr><th>Quote</th><th>Status</th><th>Created</th></tr></thead>
+  <tbody>
+    {% for q in customer.quotes %}
+    <tr>
+      <td><a href="/quotes/{{ q.id }}">{{ q.quote_number }}</a></td>
+      <td>{{ q.status.value }}</td>
+      <td>{{ q.created_at.date() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No quotes yet.</em></p>{% endif %}
+
+<h3>Jobs <a href="/jobs/new?customer_id={{ customer.id }}" role="button" class="secondary outline">+ New</a></h3>
+{% if customer.jobs %}
+<table class="compact">
+  <thead><tr><th>Job</th><th>Title</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for j in customer.jobs %}
+    <tr>
+      <td><a href="/jobs/{{ j.id }}">{{ j.job_number }}</a></td>
+      <td>{{ j.title }}</td>
+      <td>{{ j.status.value }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No jobs yet.</em></p>{% endif %}
+
+<h3>Invoices</h3>
+{% if customer.invoices %}
+<table class="compact">
+  <thead><tr><th>Invoice</th><th>Amount</th><th>Status</th><th>Due</th></tr></thead>
+  <tbody>
+    {% for inv in customer.invoices %}
+    <tr>
+      <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.amount | money }}</td>
+      <td>{{ inv.status.value }}</td>
+      <td>{{ inv.due_date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No invoices yet.</em></p>{% endif %}
+
+<p style="margin-top:2rem;"><a href="/customers">← All customers</a></p>
+{% endblock %}

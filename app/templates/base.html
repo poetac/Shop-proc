@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CNC Shop Ops{% endblock %}</title>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <script src="/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  {% set p = request.url.path if request else "" %}
+  <header class="container">
+    <nav class="app-nav">
+      <ul>
+        <li><strong><a href="/" class="brand">CNC&nbsp;Shop&nbsp;Ops</a></strong></li>
+      </ul>
+      <ul>
+        <li><a href="/" {% if p == "/" %}aria-current="page"{% endif %}>Dashboard</a></li>
+        <li><a href="/customers" {% if p.startswith("/customers") %}aria-current="page"{% endif %}>Customers</a></li>
+        <li><a href="/quotes" {% if p.startswith("/quotes") %}aria-current="page"{% endif %}>Quotes</a></li>
+        <li><a href="/jobs" {% if p.startswith("/jobs") %}aria-current="page"{% endif %}>Jobs</a></li>
+        <li><a href="/invoices" {% if p.startswith("/invoices") %}aria-current="page"{% endif %}>Invoices</a></li>
+        <li><a href="/reports" {% if p.startswith("/reports") %}aria-current="page"{% endif %}>Reports</a></li>
+        <li><a href="/reminders" {% if p.startswith("/reminders") %}aria-current="page"{% endif %}>Reminders</a></li>
+        <li><a href="/settings" {% if p.startswith("/settings") %}aria-current="page"{% endif %}>Settings</a></li>
+        <li>
+          <form method="post" action="/logout" style="margin:0;display:inline;">
+            <button type="submit" class="secondary outline logout-btn">Logout</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <main class="container">
+    {% for f in flashes %}
+    <p class="flash flash-{{ f.category }}" role="status">{{ f.message }}</p>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="container">
+    <small>Operations only — QuickBooks owns the books.</small>
+  </footer>
+</body>
+</html>

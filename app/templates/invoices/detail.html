@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_number }} · CNC Shop Ops{% endblock %}
+{% block content %}
+{% set overdue = is_overdue(invoice.status.value, invoice.due_date, invoice.status.value == "Paid", today) %}
+<hgroup>
+  <h2>{{ invoice.invoice_number }}
+    {% if overdue %}<span class="flag flag-overdue">Overdue</span>{% endif %}
+  </h2>
+  <p>
+    {% if invoice.customer %}<a href="/customers/{{ invoice.customer.id }}">{{ invoice.customer.name }}</a> · {% endif %}
+    Status: <strong>{{ invoice.status.value }}</strong>
+  </p>
+</hgroup>
+
+<div class="inline-actions">
+  {% if invoice.status.value == "Draft" %}
+  <form method="post" action="/invoices/{{ invoice.id }}/status">
+    <input type="hidden" name="status" value="Sent">
+    <button type="submit">Mark Sent</button>
+  </form>
+  {% endif %}
+
+  {% if invoice.status.value in ["Draft", "Sent"] %}
+  <form method="post" action="/invoices/{{ invoice.id }}/status">
+    <input type="hidden" name="status" value="Paid">
+    <select name="payment_method" required style="width:auto;display:inline-block;margin:0 0.25rem 0 0;">
+      <option value="card">card</option>
+      <option value="ACH">ACH</option>
+    </select>
+    <button type="submit">Mark Paid</button>
+  </form>
+  {% endif %}
+
+  {% if invoice.status.value == "Paid" %}
+  <form method="post" action="/invoices/{{ invoice.id }}/status">
+    <input type="hidden" name="status" value="Sent">
+    <button type="submit" class="secondary outline">Re-open (unpaid)</button>
+  </form>
+  {% endif %}
+
+  <form method="post" action="/invoices/{{ invoice.id }}/delete"
+        onsubmit="return confirm('Delete this invoice record?');">
+    <button type="submit" class="secondary outline">Delete</button>
+  </form>
+</div>
+
+<form method="post" action="/invoices/{{ invoice.id }}">
+  <label>Amount (USD)
+    <input type="number" step="0.01" name="amount" value="{{ '%.2f' % invoice.amount }}">
+  </label>
+  <div class="grid">
+    <label>Issue date
+      <input type="date" name="issue_date" value="{{ invoice.issue_date }}">
+    </label>
+    <label>Due date
+      <input type="date" name="due_date" value="{{ invoice.due_date }}">
+    </label>
+  </div>
+  <label>Payment method
+    <select name="payment_method">
+      <option value="" {% if not invoice.payment_method %}selected{% endif %}>—</option>
+      <option value="card" {% if invoice.payment_method and invoice.payment_method.value == "card" %}selected{% endif %}>card</option>
+      <option value="ACH" {% if invoice.payment_method and invoice.payment_method.value == "ACH" %}selected{% endif %}>ACH</option>
+    </select>
+  </label>
+  <label>QuickBooks reference
+    <input type="text" name="qb_reference" value="{{ invoice.qb_reference or '' }}">
+  </label>
+  <label>Notes
+    <textarea name="notes" rows="2">{{ invoice.notes or '' }}</textarea>
+  </label>
+  <button type="submit" class="secondary">Save changes</button>
+</form>
+
+<article>
+  <p><strong>Job:</strong>
+    {% if invoice.job %}<a href="/jobs/{{ invoice.job.id }}">{{ invoice.job.job_number }}</a>{% else %}—{% endif %}
+  </p>
+  <p><strong>Paid date:</strong> {{ invoice.paid_date or "—" }}</p>
+</article>
+
+<p style="margin-top:2rem;"><a href="/invoices">← All invoices</a></p>
+{% endblock %}

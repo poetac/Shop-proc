@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ job.job_number }} · CNC Shop Ops{% endblock %}
+{% block content %}
+<hgroup>
+  <h2>{{ job.title }}</h2>
+  <p>{{ job.job_number }} · Status: <strong>{{ job.status.value }}</strong></p>
+</hgroup>
+
+<div class="inline-actions">
+  <a href="/jobs/{{ job.id }}/edit" role="button" class="secondary">Edit</a>
+
+  {% if job.status in manual_stages %}
+  <form method="post" action="/jobs/{{ job.id }}/move">
+    <input type="hidden" name="direction" value="back">
+    <input type="hidden" name="next" value="/jobs/{{ job.id }}">
+    <button type="submit" class="secondary outline" {% if job.status.value == "Accepted" %}disabled{% endif %}>◀ Back</button>
+  </form>
+  <form method="post" action="/jobs/{{ job.id }}/move">
+    <input type="hidden" name="direction" value="forward">
+    <input type="hidden" name="next" value="/jobs/{{ job.id }}">
+    <button type="submit">Advance ▶</button>
+  </form>
+  {% endif %}
+
+  {% if job.status.value == "Done" and not job.invoice %}
+  <a href="/invoices/new?job_id={{ job.id }}" role="button">Create invoice</a>
+  {% endif %}
+
+  <form method="post" action="/jobs/{{ job.id }}/delete"
+        onsubmit="return confirm('Delete this job?');">
+    <button type="submit" class="secondary outline">Delete</button>
+  </form>
+</div>
+
+<article>
+  <p><strong>Customer:</strong>
+    {% if job.customer %}<a href="/customers/{{ job.customer.id }}">{{ job.customer.name }}</a>{% else %}—{% endif %}
+  </p>
+  <p><strong>Quote:</strong>
+    {% if job.quote %}<a href="/quotes/{{ job.quote.id }}">{{ job.quote.quote_number }}</a>{% else %}— (manual job){% endif %}
+  </p>
+  <p><strong>Due date:</strong>
+    {% if job.due_date %}
+      {% if job.due_date < today %}<span class="flag flag-overdue">{{ job.due_date }}</span>
+      {% elif is_due_soon(job.due_date, 7, today) %}<span class="flag flag-due-soon">{{ job.due_date }}</span>
+      {% else %}{{ job.due_date }}{% endif %}
+    {% else %}—{% endif %}
+  </p>
+  <p><strong>Invoice:</strong>
+    {% if job.invoice %}<a href="/invoices/{{ job.invoice.id }}">{{ job.invoice.invoice_number }}</a> ({{ job.invoice.status.value }}){% else %}—{% endif %}
+  </p>
+  {% if job.notes %}<p><strong>Notes:</strong><br>{{ job.notes }}</p>{% endif %}
+</article>
+
+{% if job.production_notes %}
+<article style="background:var(--pico-card-sectioning-background-color);">
+  <strong>🔧 Production / shop notes</strong>
+  <p style="white-space:pre-wrap;margin:0.5rem 0 0;">{{ job.production_notes }}</p>
+  {% if job.quote %}<small>Started on quote {{ job.quote.quote_number }}. Edit via the job's Edit page.</small>{% endif %}
+</article>
+{% endif %}
+
+<h3>Files</h3>
+<p><small>Drawings, prints, PDFs, STEP/CAD. Up to 25 MB each.</small></p>
+{% if job.files %}
+<table class="compact">
+  <thead><tr><th>File</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+    {% for f in job.files %}
+    <tr>
+      <td><a href="/jobs/{{ job.id }}/files/{{ f.id }}">{{ f.filename }}</a></td>
+      <td>{{ f.created_at.date() }}</td>
+      <td>
+        <form method="post" action="/jobs/{{ job.id }}/files/{{ f.id }}/delete"
+              onsubmit="return confirm('Delete this file?');" style="margin:0;">
+          <button type="submit" class="secondary outline" style="padding:0.1rem 0.5rem;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No files attached.</em></p>{% endif %}
+
+<form method="post" action="/jobs/{{ job.id }}/files" enctype="multipart/form-data">
+  <input type="file" name="upload" required>
+  <button type="submit" class="secondary">Upload file</button>
+</form>
+
+<p style="margin-top:2rem;"><a href="/jobs">← Board</a></p>
+{% endblock %}

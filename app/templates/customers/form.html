@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if customer else "New" }} customer · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>{{ "Edit customer" if customer else "New customer" }}</h2>
+<form method="post" action="{{ '/customers/' ~ customer.id if customer else '/customers' }}">
+  <label>Name *
+    <input type="text" name="name" required value="{{ customer.name if customer else '' }}">
+  </label>
+  <div class="grid">
+    <label>Company
+      <input type="text" name="company" value="{{ customer.company or '' if customer else '' }}">
+    </label>
+    <label>Email
+      <input type="email" name="email" value="{{ customer.email or '' if customer else '' }}">
+    </label>
+  </div>
+  <label>Phone
+    <input type="text" name="phone" value="{{ customer.phone or '' if customer else '' }}">
+  </label>
+  <label>Billing address
+    <textarea name="billing_address" rows="2">{{ customer.billing_address or '' if customer else '' }}</textarea>
+  </label>
+  <label>Notes
+    <textarea name="notes" rows="3">{{ customer.notes or '' if customer else '' }}</textarea>
+  </label>
+  <button type="submit">Save</button>
+  <a href="{{ '/customers/' ~ customer.id if customer else '/customers' }}" role="button" class="secondary">Cancel</a>
+</form>
+{% endblock %}

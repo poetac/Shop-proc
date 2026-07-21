@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Invoices · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Receivables</h2>
+
+<div class="stats">
+  <div class="stat">
+    <p class="value">{{ outstanding | money }}</p>
+    <p class="label">Outstanding (unpaid)</p>
+  </div>
+  <div class="stat {% if overdue_total %}alert{% endif %}">
+    <p class="value">{{ overdue_total | money }}</p>
+    <p class="label">Overdue</p>
+  </div>
+</div>
+
+<p><small>Invoices are a status mirror of QuickBooks — they are not generated or sent here.</small></p>
+
+{% if invoices %}
+<table class="compact">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Issued</th><th>Due</th><th>Status</th><th>QB ref</th></tr></thead>
+  <tbody>
+    {% for inv in invoices %}
+    <tr>
+      <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.customer.name if inv.customer else "" }}</td>
+      <td>{{ inv.amount | money }}</td>
+      <td>{{ inv.issue_date }}</td>
+      <td>{{ inv.due_date }}</td>
+      <td>
+        {{ inv.status.value }}
+        {% if is_overdue(inv.status.value, inv.due_date, inv.status.value == "Paid", today) %}
+          <span class="flag flag-overdue">Overdue</span>
+        {% endif %}
+      </td>
+      <td>{{ inv.qb_reference or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>No invoices yet. Create one from a job at the <em>Done</em> stage.</em></p>{% endif %}
+{% endblock %}

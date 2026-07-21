@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Jobs board · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Jobs board</h2>
+
+<form method="post" action="/jobs" class="quick-add">
+  <input type="hidden" name="redirect" value="board">
+  <label>Part / title
+    <input type="text" name="title" placeholder="e.g. Sensor housing" required>
+  </label>
+  <label>Customer
+    <select name="customer_id">
+      <option value="">— select —</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}">{{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>…or new customer
+    <input type="text" name="new_customer" placeholder="Type a new name">
+  </label>
+  <button type="submit">+ Quick add</button>
+</form>
+<p class="board-hint">Tip: use ▶ / ◀ on a card to move a job between stages. Full form: <a href="/jobs/new">New job</a>.</p>
+
+<div class="board">
+  {% for status in flow %}
+  <div class="board-col {% if not columns[status] %}is-empty{% endif %}">
+    <h4>{{ status.value }} <span class="count">({{ columns[status] | length }})</span></h4>
+    {% for job in columns[status] %}
+      {% include "partials/job_card.html" %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

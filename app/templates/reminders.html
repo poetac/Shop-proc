@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Reminders · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Reminders</h2>
+<p><small>An operations heads-up for you — what's overdue or due soon. This is not customer dunning; QuickBooks owns invoice sending and collection.</small></p>
+
+{% if sent == "ok" %}<p role="alert" style="color:#1b6b1b;">Reminder email sent to {{ recipient }}.</p>{% endif %}
+{% if sent == "error" %}<p role="alert" class="error">Could not send — check the SMTP settings.</p>{% endif %}
+{% if sent == "skipped" %}<p role="alert">Nothing to send (either no items, or email isn't configured).</p>{% endif %}
+
+<div class="inline-actions">
+  {% if configured and not empty %}
+  <form method="post" action="/reminders/send">
+    <button type="submit">Email this digest to {{ recipient }}</button>
+  </form>
+  {% elif not configured %}
+  <p><small>📭 Email sending is off. Set the <code>SMTP_*</code> env vars (see <code>.env.example</code>) to enable the "Email digest" button and scheduled reminders.</small></p>
+  {% endif %}
+</div>
+
+{% if empty %}
+<p><em>All clear — nothing overdue or due within 7 days.</em></p>
+{% else %}
+
+<h3>Overdue invoices ({{ digest.overdue_invoices | length }}) — {{ digest.overdue_total | money }}</h3>
+{% if digest.overdue_invoices %}
+<table class="compact">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Due</th></tr></thead>
+  <tbody>
+    {% for inv in digest.overdue_invoices %}
+    <tr>
+      <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.customer.name if inv.customer else "" }}</td>
+      <td>{{ inv.amount | money }}</td>
+      <td><span class="flag flag-overdue">{{ inv.due_date }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>None.</em></p>{% endif %}
+
+<h3>Invoices due soon ({{ digest.due_soon_invoices | length }})</h3>
+{% if digest.due_soon_invoices %}
+<table class="compact">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Due</th></tr></thead>
+  <tbody>
+    {% for inv in digest.due_soon_invoices %}
+    <tr>
+      <td><a href="/invoices/{{ inv.id }}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.customer.name if inv.customer else "" }}</td>
+      <td>{{ inv.amount | money }}</td>
+      <td><span class="flag flag-due-soon">{{ inv.due_date }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>None.</em></p>{% endif %}
+
+<h3>Jobs due within 7 days ({{ digest.due_soon_jobs | length }})</h3>
+{% if digest.due_soon_jobs %}
+<table class="compact">
+  <thead><tr><th>Job</th><th>Title</th><th>Due</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for job in digest.due_soon_jobs %}
+    <tr>
+      <td><a href="/jobs/{{ job.id }}">{{ job.job_number }}</a></td>
+      <td>{{ job.title }}</td>
+      <td><span class="flag flag-due-soon">{{ job.due_date }}</span></td>
+      <td>{{ job.status.value }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p><em>None.</em></p>{% endif %}
+
+{% endif %}
+{% endblock %}

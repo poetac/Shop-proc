@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if job else "New" }} job · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>{{ "Edit job " ~ job.job_number if job else "New job" }}</h2>
+<form method="post" action="{{ '/jobs/' ~ job.id if job else '/jobs' }}">
+  <label>Customer {% if job %}*{% endif %}
+    <select name="customer_id" {% if job %}required{% endif %}>
+      <option value="">— select —</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}" {% if selected_customer_id == c.id %}selected{% endif %}>
+        {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+  {% if not job %}
+  <label>…or add a new customer <small>(type a name to create one on the fly)</small>
+    <input type="text" name="new_customer" placeholder="New customer name">
+  </label>
+  {% endif %}
+  <label>Title / part *
+    <input type="text" name="title" required value="{{ job.title if job else '' }}">
+  </label>
+  <label>Due date
+    <input type="date" name="due_date" value="{{ job.due_date if job and job.due_date else '' }}">
+  </label>
+  <label>Notes
+    <textarea name="notes" rows="3">{{ job.notes or '' if job else '' }}</textarea>
+  </label>
+  <label>Production / shop notes <small>(tooling, fixturing, setup, QC — the shop's memory for this part)</small>
+    <textarea name="production_notes" rows="4"
+              placeholder="e.g. Requires a 6mm end mill with 40mm reach; soft jaws for op 2.">{{ job.production_notes or '' if job else '' }}</textarea>
+  </label>
+  <button type="submit">Save job</button>
+  <a href="{{ '/jobs/' ~ job.id if job else '/jobs' }}" role="button" class="secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,27 @@
+<div class="job-card" id="job-{{ job.id }}">
+  <h5><a href="/jobs/{{ job.id }}">{{ job.title }}</a></h5>
+  <small>{{ job.job_number }}{% if job.customer %} · {{ job.customer.name }}{% endif %}</small>
+  {% if job.due_date %}
+    <div>
+      {% if job.due_date < today %}
+        <span class="flag flag-overdue">Due {{ job.due_date }}</span>
+      {% elif is_due_soon(job.due_date, 7, today) %}
+        <span class="flag flag-due-soon">Due {{ job.due_date }}</span>
+      {% else %}
+        <small>Due {{ job.due_date }}</small>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if job.status in manual_stages %}
+  <div class="move">
+    <form method="post" action="/jobs/{{ job.id }}/move">
+      <input type="hidden" name="direction" value="back">
+      <button type="submit" class="secondary outline" {% if job.status.value == "Accepted" %}disabled{% endif %}>◀</button>
+    </form>
+    <form method="post" action="/jobs/{{ job.id }}/move">
+      <input type="hidden" name="direction" value="forward">
+      <button type="submit">▶</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
