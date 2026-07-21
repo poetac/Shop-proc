@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Import customers · CNC Shop Ops{% endblock %}
+{% block content %}
+<h2>Import customers</h2>
+<p><small>Paste CSV or upload a file. The first row must be a header including a
+<code>name</code> column. Recognized columns: <code>name, company, email, phone,
+billing_address, notes</code> (extra columns are ignored).</small></p>
+
+{% if created is not none %}
+<article>
+  <strong>Imported {{ created }} customer{{ "" if created == 1 else "s" }}.</strong>
+  {% if errors %}
+  <ul style="margin-top:0.5rem;">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+  <p><a href="/customers" role="button" class="secondary">View customers</a></p>
+</article>
+{% endif %}
+
+<form method="post" action="/customers/import" enctype="multipart/form-data">
+  <label>Paste CSV
+    <textarea name="csv_text" rows="8"
+              placeholder="name,company,email,phone&#10;Acme Machining,Acme Inc,buyer@acme.com,555-0100"></textarea>
+  </label>
+  <label>…or upload a .csv file
+    <input type="file" name="csv_file" accept=".csv,text/csv">
+  </label>
+  <button type="submit">Import</button>
+  <a href="/customers" role="button" class="secondary">Cancel</a>
+</form>
+{% endblock %}

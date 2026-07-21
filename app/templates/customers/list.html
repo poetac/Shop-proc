@@ -2,7 +2,10 @@
 {% block title %}Customers · CNC Shop Ops{% endblock %}
 {% block content %}
 <h2>Customers</h2>
-<p><a href="/customers/new" role="button">+ New customer</a></p>
+<p>
+  <a href="/customers/new" role="button">+ New customer</a>
+  <a href="/customers/import" role="button" class="secondary outline">Import CSV</a>
+</p>
 
 <input type="search" name="q" placeholder="Search name, company, email…" value="{{ q }}"
        hx-get="/customers" hx-trigger="input changed delay:300ms, search"
